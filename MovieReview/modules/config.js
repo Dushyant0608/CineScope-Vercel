@@ -1,6 +1,6 @@
 /* Configuration and Constants */
-export const API_KEY = '';
-export const TMDB_BASE = '/api';
+export const API_KEY = 'd080716463145230a69c58755e8238e2';
+export const TMDB_BASE = 'https://api.themoviedb.org/3';
 export const IMG_BASE = 'https://image.tmdb.org/t/p/';
 export const IMG_W185 = IMG_BASE + 'w185';
 export const IMG_W342 = IMG_BASE + 'w342';
@@ -29,4 +29,5 @@ export const APP_CONFIG = {
   SIMILAR_LIMIT: 12,
   DEFAULT_SORT: 'popularity.desc'
 };
+
 
