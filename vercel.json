@@ -1,8 +1,0 @@
-{
-    "rewrites": [
-      {
-        "source": "/api/:path*",
-        "destination": "https://api.themoviedb.org/3/:path*?api_key=:VITE_TMDB_API_KEY"
-      }
-    ]
-  }
