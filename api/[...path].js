@@ -1,45 +1,42 @@
-export default async function handler(request, response) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(request) {
+  // Get the path from the incoming request URL
+  const path = new URL(request.url).pathname.replace('/api/', '');
+  
+  // Get the secret API key from Vercel's environment variables
+  const apiKey = process.env.VITE_TMDB_API_KEY;
+
+  // If the key is missing, return an error
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Missing API key' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Construct the full URL for the real TMDB API
+  const tmdbUrl = new URL(`https://api.themoviedb.org/3/${path}`);
+  
+  // Add the secret API key and any other parameters from the original request
+  tmdbUrl.searchParams.set('api_key', apiKey);
+  new URL(request.url).searchParams.forEach((value, key) => {
+    tmdbUrl.searchParams.set(key, value);
+  });
+
+  // Fetch the data from TMDB and return it directly to your website
   try {
-    const { path = [] } = request.query;
-    const upstreamPath = Array.isArray(path) ? path.join('/') : String(path || '');
-
-    const TMDB_API_KEY = process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY || '';
-    if (!TMDB_API_KEY) {
-      return response.status(500).json({ error: 'Missing TMDB API key on server' });
-    }
-
-    const upstreamUrl = new URL(`https://api.themoviedb.org/3/${upstreamPath}`);
-
-    // Copy query params and add api_key
-    const originalUrl = new URL(request.url, `http://${request.headers.host}`);
-    originalUrl.searchParams.forEach((value, key) => {
-      // Do not forward any client-provided api_key
-      if (key.toLowerCase() !== 'api_key') upstreamUrl.searchParams.set(key, value);
+    const res = await fetch(tmdbUrl.toString());
+    return new Response(res.body, {
+      status: res.status,
+      headers: { 'Content-Type': res.headers.get('Content-Type') },
     });
-    upstreamUrl.searchParams.set('api_key', TMDB_API_KEY);
-
-    const upstreamRes = await fetch(upstreamUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-
-    const contentType = upstreamRes.headers.get('content-type') || '';
-    const status = upstreamRes.status;
-
-    if (contentType.includes('application/json')) {
-      const data = await upstreamRes.json();
-      return response.status(status).json(data);
-    } else {
-      const buffer = await upstreamRes.arrayBuffer();
-      response.status(status);
-      response.setHeader('Content-Type', contentType || 'application/octet-stream');
-      return response.send(Buffer.from(buffer));
-    }
   } catch (error) {
-    return response.status(500).json({ error: 'Proxy error', details: String((error && error.message) || error) });
+    return new Response(JSON.stringify({ error: 'API fetch failed' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
-
-
